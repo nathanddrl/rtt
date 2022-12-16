@@ -55,7 +55,7 @@ socketIo.on("connection", (clientSocket) => {
 });
 
 // Configurer la route d'accueil pour servir le fichier HTML
-app.use(express.static("./"));
+app.use(express.static("./index.html"));
 
 // Écouter les connexions sur le port 3000
-httpServer.listen(8080);
+httpServer.listen(process.env.PORT || 8080);
