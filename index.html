@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Chat en direct</title>
+
+    <!-- Incluez Tailwind CSS en utilisant une balise <link> -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/tailwindcss@^1.0/dist/tailwind.min.css"
+    />
+
+    <!-- Appliquez un style minimaliste en utilisant la classe Tailwind "bg-gray-100" -->
+    <style></style>
+  </head>
+  <body class="bg-gray-900 text-gray-100">
+    <div class="container mx-auto">
+      <h1 class="text-2xl font-bold text-white mb-4">Chat en direct</h1>
+      <div id="dot"></div>
+
+      <!-- Utilisez les classes Tailwind "flex" et "border" pour créer un conteneur pour les textarea -->
+      <div class="flex border rounded-lg p-4 grid grid-cols-3 gap-8" id="container">
+        <!-- Utilisez la classe Tailwind "w-full" pour faire en sorte que les textarea occupent toute la largeur du conteneur -->
+      </div>
+    </div>
+    <div id="test"></div>
+    <!-- <script src="script.js"></script> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+      // Connectez-vous à la socket sur le serveur en utilisant l'URL de base
+      const socket = io.connect("https://web-mmi2.iutbeziers.fr/~nathan.dudreuil/RTT/");
+
+      const container = document.getElementById("container");
+
+      var clients = [];
+
+      // Écoutez les événements de connexion à la socket
+      // Écoutez les événements de connexion à la socket
+      socket.on("connect", () => {
+        console.log("connected ! ");
+        socket.emit("clientList", socket.id);
+        socket.on("getClientList", (list) => {
+          clients = list;
+
+          clients.forEach((client) => {
+            // Create a new textarea for each client
+            var textarea = document.createElement("textarea");
+            if (client == socket.id) {
+              textarea.className =
+                "userTA w-full rounded-lg p-2 mx-2 bg-green-700";
+              textarea.disabled = false;
+              textarea.placeholder = "Écrivez ici : " + client;
+
+              textarea.addEventListener("input", (event) => {
+                var message = event.target.value;
+                console.log(message + "MESSAGE INPUT");
+
+                // When input is received, send the message to the server via the socket connection
+                socket.emit("entrant", socket.id, message);
+              });
+            } else {
+              textarea.className =
+                "userTA w-full rounded-lg p-2 mx-2 bg-gray-700";
+              textarea.disabled = true;
+              textarea.placeholder = client;
+            }
+            textarea.id = client;
+            textarea.classList.add('h-20');
+            
+          textarea.style.height = "200px";
+            console.log("new ta");
+            // Add an event listener to the textarea that listens for input events
+
+            // Append the textarea to the page
+            container.appendChild(textarea);
+          });
+        });
+
+        socket.on("newUser", (id) => {
+          var textarea = document.createElement("textarea");
+
+          textarea.className = "userTA w-full rounded-lg p-2 mx-2 bg-gray-700";
+          textarea.disabled = true;
+          textarea.placeholder = id;
+
+          textarea.id = id;
+          
+          textarea.style.height = "200px";
+          // Add an event listener to the textarea that listens for input events
+
+          // Append the textarea to the page
+          container.appendChild(textarea);
+        });
+        // socket.emit("newUser", socket.id);
+        // Loop through all connected clients
+      });
+
+      socket.on("sortant", (id, message) => {
+        // Loop through all textareas on the page
+        const textareas = document.querySelectorAll("textarea");
+        textareas.forEach((textarea) => {
+          // Check if the ID of the textarea matches the ID of the client that sent the message
+          if (textarea.id == id) {
+            console.log(message);
+            // If the IDs match, update the value of the textarea with the message
+            textarea.value = message;
+          }
+        });
+      });
+
+      // socket.on("newUser", (id) => {
+      //   container.innerHTML += `
+      //   <textarea
+      //     class="userTA w-full rounded-lg p-2 mx-2 bg-gray-700"
+      //     placeholder=""
+      //     id="${id}"
+      //   ></textarea>
+      // `;
+      // });
+      // Écoutez les événements de déconnexion de la socket
+      socket.on("disconnect", () => {
+        console.log("Disconnected from socket");
+        socket.emit("newDisconnect", socket.id);
+      });
+
+      socket.on("userDisconnect", (id) => {
+        // Loop through all textareas on the page
+        const textareas = document.querySelectorAll("textarea");
+        textareas.forEach((textarea) => {
+          // Check if the ID of the textarea matches the ID of the disconnected client
+          if (textarea.id == id) {
+            // If the IDs match, remove the textarea from the page
+            console.log("remove : " + id);
+            textarea.remove();
+          }
+        });
+        clients.splice(clients.indexOf(id), 1);
+        console.log(clients);
+      });
+    </script>
+  </body>
+</html>
